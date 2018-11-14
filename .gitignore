@@ -1,3 +1,3 @@
-question_generator/stanford-parser-full-2018-10-17
-question_generator/stanford-ner-2018-10-16
-question_generator/stanford-postagger-2018-10-16
+stanford_nlp/stanford-parser-full-2018-10-17
+stanford_nlp/stanford-ner-2018-10-16
+stanford_nlp/stanford-postagger-2018-10-16
