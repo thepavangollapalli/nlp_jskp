@@ -1,3 +1,5 @@
 stanford_nlp/stanford-parser-full-2018-10-17
 stanford_nlp/stanford-ner-2018-10-16
 stanford_nlp/stanford-postagger-2018-10-16
+.DS_Store
+stanford_nlp/.DS_Store
