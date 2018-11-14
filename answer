@@ -1,0 +1,3 @@
+#!/bin/sh
+
+python3 answer_generator/answers.py $1 $2

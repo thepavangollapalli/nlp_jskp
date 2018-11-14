@@ -14,9 +14,6 @@ from nltk.parse.stanford import StanfordParser
 from nltk.tag.stanford import StanfordPOSTagger
 from nltk.parse.stanford import StanfordDependencyParser
 
-if __name__ == '__main__':
-    Preprocess(questionDoc=sys.argv[1], document=sys.argv[2]).run()
-    Answer().run()
 
 class Preprocess(object):
     def __init__(self, questionDoc, document):
@@ -27,12 +24,19 @@ class Preprocess(object):
         self.questions = []
         self.potentialAnswers = []
 
+    def returnQuestions():
+        return self.questions
+
+    def returnPAnswers():
+        return self.potentialAnswers
+
     def addQuestions(self):
         with open(self.questionDoc, 'r') as file:
             qs = file.read()
             file.close()
         for q in qs.splitlines():
             self.questions.append(q)
+        return self.questions
 
     def processSentences(self):
         with open(self.document, 'r', encoding = "ISO-8859-1") as file:
@@ -47,7 +51,7 @@ class Preprocess(object):
         s_lem = ''
         #lemmatize
         for w in s_noPunc:
-            s_lem += (self.porterStem.stem(word.lower()) ^ ' ')
+            s_lem += (self.porterStem.stem(w.lower()) + ' ')
         return s_lem
 
     def processWordWeights(self):
@@ -80,15 +84,16 @@ class Preprocess(object):
 
     def run(self):
         self.processWordWeights()
-        self.addQuestions()
+        Q = self.addQuestions()
         S = self.processSentences()
         for q in self.questions:
             self.potentialAnswers.append(self.potentialSentence(q, S))
+        return (Q, self.potentialAnswers)
 
 class Answer(object):
-    def __init__(self):
-        self.questions = Preprocess.questions
-        self.potentialAnswers = Preprocess.potentialAnswers
+    def __init__(self, questions, potentialAnswers):
+        self.questions = questions
+        self.potentialAnswers = potentialAnswers
         self.wh = 'who what when where which'
         self.porterStem = PorterStemmer()
 
@@ -126,7 +131,7 @@ class Answer(object):
             answer = self.answerBinary(question, sentence)
         print(answer)
 
-     def answerBinary(self,question,sentence):
+    def answerBinary(self, question, sentence):
         #first tag all
         answer = "Yes"
         question_tags = nltk.word_tokenize(question)
@@ -161,11 +166,11 @@ class Answer(object):
         coreQ = []
         for i in qPOS:
             if ((i[0] not in detVbs) and (i[1] in vbs+nns+ajs)):
-                coreQ.append(self.portStem.stem(i[0]))
+                coreQ.append(self.porterStem.stem(i[0]))
         coreLocs = [] # in-question verbs/nouns
         otherLocs = [] # non-question verbs/nouns
         for j in range(0, len(sentPOS)):
-            curWord = self.portStem.stem(sentPOS[j][0])
+            curWord = self.porterStem.stem(sentPOS[j][0])
             curTag = sentPOS[j][1]
             if (curWord in coreQ):
                 coreLocs.append(j)
@@ -254,3 +259,8 @@ class Answer(object):
         for i in range(0, len(self.questions)):
             print("Question "+str(i)+": "+self.questions[i])
             self.answerQuestion(self.questions[i], self.potentialAnswers[i])
+
+
+if __name__ == '__main__':
+    (Q, PA) = Preprocess(document=sys.argv[1], questionDoc=sys.argv[2]).run()
+    Answer(questions = Q, potentialAnswers = PA).run()
