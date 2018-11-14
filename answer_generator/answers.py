@@ -39,7 +39,7 @@ class Preprocess(object):
         return nltk.tokenize.sent_tokenize(ss.replace("\n", " . "))
 
     def answerBinary(self,question,sentence):
-        ans = "Yeet"
+        answer = "Yeet"
         question_tags = nltk.pos_tag(ntlk.word_tokenize(question))
         nouns_verbs = []
         for (word,tag) in question_tags:
@@ -54,7 +54,8 @@ class Preprocess(object):
                 nv_count+=1
             if(word in negations):
                 negate = True
-        if float(nv_count)/len(nouns_verbs) <= .34 or negate :
+        #if the proportion of recognized nouns/verbs is too low or there is a negation in the sentence we say no
+        if float(nv_count)/len(nouns_verbs) <= .34 or negate:
             answer = "Nope"
         return answer
 
