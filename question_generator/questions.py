@@ -1,4 +1,5 @@
 import nltk
+import sys
 from nltk.tag.stanford import StanfordNERTagger, StanfordPOSTagger
 
 stanford_ner_jar = 'stanford-ner-2018-10-16/stanford-ner.jar'
@@ -82,6 +83,28 @@ def who(sentence):
     q.append("?")
     return q
 
+if __name__ == '__main__':
+    txtFile = sys.argv[1]
+    n = int(sys.argv[2])
+    sentences = []
+    result = list()
+    counter = 0
+    with open(txtFile, 'r') as f:
+            content = f.read()
+            f.close()
+    sentences = Sentences(content)
+    for i in range(0, len(sentences.sentences)):
+        result.append(' '.join(what(Sentence(sentences, i))))
+    for q in result:
+        if(q != ""):
+            if(counter<n):
+                print("Q" + str(counter) + ": " + q)
+                counter += 1
+            else:
+                break
+    while(counter<n):
+        print("Q" + str(counter) + ": " + '')
+        counter += 1
 
 
 

@@ -1,0 +1,3 @@
+#!/bin/sh
+
+python3 question_generator/quesitons.py $1 $2
