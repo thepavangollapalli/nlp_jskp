@@ -81,16 +81,8 @@ def who(sentence):
                 q.append(sentence.tokenized[i])
     q.append("?")
     return q
-#testing
-# sentences = "Pandas are becoming extinct because they don't give birth to that many babies."
-# testSent = Sentences(sentences)
-# testS = Sentence(testSent, 0)
-# print(what(testS))
 
-sentences = "Pandas are becoming extinct because they don't give birth to that many babies."
-testSent = Sentences(sentences)
-test = Sentence(testSent, 0)
-print(who(test))
+
 
 
 
