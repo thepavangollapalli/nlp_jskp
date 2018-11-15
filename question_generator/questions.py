@@ -11,16 +11,46 @@ pos_tagger = StanfordPOSTagger(stanford_pos_model, stanford_pos_jar, encoding="u
 
 #class to store all sentences
 class Sentences:
-    pass
+    def __init__(self, passage):
+        self.sentences = nltk.tokenize.sent_tokenize(passage)
+        self.tokenized = self.tokenize(self.sentences)
+        self.ner = self.ner(self.tokenized)
+        self.pos = self.pos(self.tokenized)
 
-#Class to store individual sentence
+    def tokenize(self, sentences):
+        tokens = list()
+        for s in self.sentences:
+            tokens.append(nltk.word_tokenize(s))
+        return tokens
+
+    def ner(self, tokens):
+        nerTags = ner_tagger.tag_sents(tokens)
+        # print(nerTags)
+        return nerTags
+
+    def pos(self, tokens):
+        posTags = list()
+        for s in tokens:
+            posTags.append(nltk.pos_tag(s))
+        return posTags
+
 class Sentence:
-    pass
+    def __init__(self, s, n):
+        self.currSent = s.sentences[n]
+        self.tokenized = s.tokenized[n]
+        self.ner = s.ner[n]
+        self.pos = s.pos[n]
+        self.len = len(self.tokenized)
+
+    def __repr__(self):
+        return str(self.ner)
+
+
 
 def what(sentence):
     q = list()
     found = False
-    for i in range(1, sentence.len - 1):
+    for i in range(1, len(sentence.tokenized) - 1):
         if found:
             if sentence.pos[i][1] in ['NN', 'NNP', 'NNS', 'PRP'] and sentence.tokenized[i-1] == 'and':
                 q.pop()
@@ -49,6 +79,18 @@ def who(sentence):
                 q.append(sentence.tokenized[i])
             else:
                 q.append(sentence.tokenized[i])
-    q.pop()
     q.append("?")
     return q
+#testing
+# sentences = "Pandas are becoming extinct because they don't give birth to that many babies."
+# testSent = Sentences(sentences)
+# testS = Sentence(testSent, 0)
+# print(what(testS))
+
+sentences = "Pandas are becoming extinct because they don't give birth to that many babies."
+testSent = Sentences(sentences)
+test = Sentence(testSent, 0)
+print(who(test))
+
+
+
