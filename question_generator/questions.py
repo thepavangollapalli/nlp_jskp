@@ -98,12 +98,12 @@ if __name__ == '__main__':
     for q in result:
         if(q != ""):
             if(counter<n):
-                print("Q" + str(counter) + ": " + q)
+                print(q)
                 counter += 1
             else:
                 break
     while(counter<n):
-        print("Q" + str(counter) + ": " + '')
+        print('')
         counter += 1
 
 
