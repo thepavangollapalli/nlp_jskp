@@ -31,7 +31,7 @@ class Preprocess(object):
         return self.potentialAnswers
 
     def addQuestions(self):
-        with open(self.questionDoc, 'r') as file:
+        with open(self.questionDoc, 'r', encoding = "ISO-8859-1") as file:
             qs = file.read()
             file.close()
         for q in qs.splitlines():
@@ -87,7 +87,8 @@ class Preprocess(object):
         Q = self.addQuestions()
         S = self.processSentences()
         for q in self.questions:
-            self.potentialAnswers.append(self.potentialSentence(q, S))
+            s = self.potentialSentence(q, S)
+            self.potentialAnswers.append(s)
         return (Q, self.potentialAnswers)
 
 class Answer(object):
@@ -99,30 +100,27 @@ class Answer(object):
 
     def clean(self, s):
         s = s.strip()
-        s = s.replace(".", " .")
-        s = s.replace(",", " ,")
-        s = s.replace("!", " !")
-        s = s.replace("?", " ?")
-        s = s.replace(";", " ;")
+        s = s.replace(".", " .").replace(",", " ,").replace("!", " !")
+        s = s.replace("?", " ?").replace(";", " ;")
         return timex.timexTag(s)
 
     def ner(self, sentence):
         Es = nltk.ne_chunk(nltk.pos_tag(word_tokenize(sentence))).pos()
         EL = []
         for E in Es:
-            EL.append(E[0][0], E[1])
+            EL.append((E[0][0], E[1]))
         return EL
 
     def answerQuestion(self, question, sentence):
         searchObj = re.findall(r'did|was|is|who|what|where|when|how|which|why', question, re.I)
-        qType = None
+        qType = ''
         if (len(searchObj) == 1):
-            qType = searchObj[0]
+            qType = searchObj[0].lower()
         else:
             for word in searchObj:
-                if ((word in self.wh) and (qType == None)):
+                if ((word in self.wh) and (qType == '')):
                     qType = word
-            if (qType == None): qType = searchObj[0]
+            if (qType == '' and len(searchObj) >= 1): qType=searchObj[0].lower()
         if (qType.lower() in self.wh):
             answer = self.answerWh(qType.lower(), question, sentence)
         elif (qType.lower() == "why"):
@@ -131,32 +129,9 @@ class Answer(object):
             answer = self.answerBinary(question, sentence)
         print(answer)
 
-    # def answerBinary(self, question, sentence):
-    #     #first tag all
-    #     answer = "Yes"
-    #     question_tags = nltk.word_tokenize(question)
-    #     q_tags = nltk.pos_tag(question_tags)
-    #     q_identified_words = []
-    #     for word,tag in q_tags:
-    #         if("NN" in tag or "J" in tag):
-    #             q_identified_words.append(word)
-    #     target_sentence_tags = nltk.word_tokenize(sentence)
-    #     s_tags = nltk.pos_tag(target_sentence_tags)
-    #     # print(s_tags)
-    #     negative_words = ["does not", "is not", "not", "don't", "isn't", "is not"]
-    #     is_negative = False
-    #     for word,tag in s_tags:
-    #         if(word in q_identified_words):
-    #             answer = "Yes"
-    #         if(word in negative_words):
-    #             is_negative = True
-    #     if(is_negative):
-    #         answer = "No"
-    #     return(answer)
-
     def answerBinary(self,question,sentence):
-        answer = "Yeet"
-        question_tags = nltk.pos_tag(ntlk.word_tokenize(question))
+        answer = "Yes!"
+        question_tags = nltk.pos_tag(nltk.word_tokenize(question))
         nouns_verbs = []
         for (word,tag) in question_tags:
             if("NN" in tag or "JJ" in tag):
@@ -172,7 +147,7 @@ class Answer(object):
                 negate = True
         #if the proportion of recognized nouns/verbs is too low or there is a negation in the sentence we say no
         if float(nv_count)/len(nouns_verbs) <= .34 or negate:
-            answer = "Nope"
+            answer = "No!"
         return answer
 
     def answerWhy(self, question, sentence):
@@ -224,6 +199,7 @@ class Answer(object):
         answerLocs = []
         cQuestion = self.clean(question)
         cSentence = self.clean(sentence)
+        # print("debugQ  -------------- "+cQuestion+"\n"+ "debugS----------"+cSentence)
         if (wh == "who"):
             questionEnts = self.ner(cQuestion)
             sentenceEnts = self.ner(cSentence)
@@ -266,6 +242,7 @@ class Answer(object):
                 if (inTimex == 1):
                     answer += words[wordNum]
                     answer += " "
+                    #print("adding time!!!!!!!!"+words[wordNum])
                 if (words[wordNum] == "TIMEX2"):
                     inTimex = 1
             year = re.compile("((?<=\s)\d{4}|^\d{4})")
@@ -278,7 +255,7 @@ class Answer(object):
 
     def run(self):
         for i in range(0, len(self.questions)):
-            print("Question "+str(i)+": "+self.questions[i])
+            #print("Question "+str(i)+": "+self.questions[i])
             self.answerQuestion(self.questions[i], self.potentialAnswers[i])
 
 
