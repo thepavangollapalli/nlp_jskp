@@ -14,8 +14,7 @@ from nltk.parse.stanford import StanfordParser
 from nltk.tag.stanford import StanfordPOSTagger
 from nltk.parse.stanford import StanfordDependencyParser
 
-
-class Preprocess(object):
+class Execute(object):
     def __init__(self, questionDoc, document):
         self.porterStem = PorterStemmer()
         self.wordWeights = dict()
@@ -23,12 +22,14 @@ class Preprocess(object):
         self.document = document
         self.questions = []
         self.potentialAnswers = []
-
-    def returnQuestions():
-        return self.questions
-
-    def returnPAnswers():
-        return self.potentialAnswers
+        self.processWordWeights()
+        Q = self.addQuestions()
+        S = self.processSentences()
+        for q in self.questions:
+            s = self.potentialSentence(q, S)
+            self.potentialAnswers.append(s)
+        for i in range(0, len(Q)):
+            self.answerQuestion(Q[i], self.potentialAnswers[i])
 
     def addQuestions(self):
         with open(self.questionDoc, 'r', encoding = "ISO-8859-1") as file:
@@ -82,22 +83,6 @@ class Preprocess(object):
                 maxRank = rank
         return bestS
 
-    def run(self):
-        self.processWordWeights()
-        Q = self.addQuestions()
-        S = self.processSentences()
-        for q in self.questions:
-            s = self.potentialSentence(q, S)
-            self.potentialAnswers.append(s)
-        return (Q, self.potentialAnswers)
-
-class Answer(object):
-    def __init__(self, questions, potentialAnswers):
-        self.questions = questions
-        self.potentialAnswers = potentialAnswers
-        self.wh = 'who what when where which'
-        self.porterStem = PorterStemmer()
-
     def clean(self, s):
         s = s.strip()
         s = s.replace(".", " .").replace(",", " ,").replace("!", " !")
@@ -112,24 +97,33 @@ class Answer(object):
         return EL
 
     def answerQuestion(self, question, sentence):
-        searchObj = re.findall(r'did|was|is|who|what|where|when|how|which|why', question, re.I)
+        searchObj = re.findall(r'did|was|is|who|what|where|when|how|which|why',\
+            question, re.I)
         qType = ''
         if (len(searchObj) == 1):
             qType = searchObj[0].lower()
         else:
             for word in searchObj:
-                if ((word in self.wh) and (qType == '')):
+                if ((word in 'where what which who when') and (qType == '')):
                     qType = word
             if (qType == '' and len(searchObj) >= 1): qType=searchObj[0].lower()
-        if (qType.lower() in self.wh):
-            answer = self.answerWh(qType.lower(), question, sentence)
-        elif (qType.lower() == "why"):
+        if (qType == "why"):
             answer = self.answerWhy(question, sentence)
+        elif (qType == "who"):
+            answer = self.answerWho(question, sentence)
+        elif (qType == "when"):
+            answer = self.answerWhen(question, sentence)
+        elif (qType == "where"):
+            answer = self.answerWhere(question, sentence)
+        elif (qType == "what"):
+            answer = self.answerWhat(question, sentence)
+        elif (qType == "which"): 
+            answer = self.answerWhich(question, sentence)
         else:
             answer = self.answerBinary(question, sentence)
         print(answer)
 
-    def answerBinary(self,question,sentence):
+    def answerBinary(self, question, sentence):
         answer = "Yes!"
         question_tags = nltk.pos_tag(nltk.word_tokenize(question))
         nouns_verbs = []
@@ -145,7 +139,8 @@ class Answer(object):
                 nv_count+=1
             if(word in negations):
                 negate = True
-        #if the proportion of recognized nouns/verbs is too low or there is a negation in the sentence we say no
+        # if the proportion of recognized nouns/verbs is too low or there is a 
+        # negation in the sentence we say no
         if float(nv_count)/len(nouns_verbs) <= .34 or negate:
             answer = "No!"
         return answer
@@ -183,7 +178,8 @@ class Answer(object):
         if (min(coreLocs) > min(otherLocs)):
             ansRange = [i for i in otherLocs if i < min(coreLocs)]
             ansRange = range(min(ansRange), max(ansRange)+1)
-            if (sentPOS[(max(ansRange)-1 in nns)][0] and (sentPOS[max(ansRange)][0] in vbs)):
+            if (sentPOS[(max(ansRange)-1 in nns)][0] and \
+                (sentPOS[max(ansRange)][0] in vbs)):
                 ansRange = range(min(ansRange), max(ansRange)-1)                
         # find out if we need to format extra
         ansWords = [sentPOS[i][0] for i in ansRange]
@@ -194,70 +190,64 @@ class Answer(object):
         answer = startPhrase + " ".join(ansWords)
         return(answer)   
 
-    def answerWh(self, wh, question, sentence):
+    def answerWhere(self, question, sentence):
+        answer = "In "
+        answerLocs = []
+        questionEnts = self.ner(self.clean(question))
+        sentenceEnts = self.ner(self.clean(sentence))
+        for entNum in range(0,len(sentenceEnts)):
+            if (sentenceEnts[entNum][1] == "GPE"):
+                answerLocs.append(entNum)
+        answerLocs.append(-1)
+        for locNum in range(0,len(answerLocs)-1):
+            answer += sentenceEnts[answerLocs[locNum]][0]
+            answer += " "
+            if (answerLocs[locNum+1] - answerLocs[locNum] > 1):
+                answer += "and"
+                answer += " "
+        if (answer == ""): answer = sentence # get original sentence
+        else: answer += "."
+        return(answer)
+
+    def answerWho(self, question, sentence):
         answer = ""
         answerLocs = []
-        cQuestion = self.clean(question)
-        cSentence = self.clean(sentence)
-        # print("debugQ  -------------- "+cQuestion+"\n"+ "debugS----------"+cSentence)
-        if (wh == "who"):
-            questionEnts = self.ner(cQuestion)
-            sentenceEnts = self.ner(cSentence)
-            for entNum in range(0,len(sentenceEnts)):
-                if (sentenceEnts[entNum][1] == "PERSON"):
-                    answerLocs.append(entNum)
-            answerLocs.append(-1)
-            for locNum in range(0,len(answerLocs)-1):
-                answer += sentenceEnts[answerLocs[locNum]][0]
+        questionEnts = self.ner(self.clean(question))
+        sentenceEnts = self.ner(self.clean(sentence))
+        for entNum in range(0,len(sentenceEnts)):
+            if (sentenceEnts[entNum][1] == "PERSON"):
+                answerLocs.append(entNum)
+        answerLocs.append(-1)
+        for locNum in range(0,len(answerLocs)-1):
+            answer += sentenceEnts[answerLocs[locNum]][0]
+            answer += " "
+            if (answerLocs[locNum+1] - answerLocs[locNum] > 1):
+                answer += "and"
                 answer += " "
-                if (answerLocs[locNum+1] - answerLocs[locNum] > 1):
-                    answer += "and"
-                    answer += " "
-            if (answer == ""): answer = sentence # get original sentence
-            return(answer)
-        if (wh == "where"):
-            questionEnts = self.ner(cQuestion)
-            sentenceEnts = self.ner(cSentence)
-            answer = "In "
-            for entNum in range(0,len(sentenceEnts)):
-                if (sentenceEnts[entNum][1] == "GPE"):
-                    answerLocs.append(entNum)
-            answerLocs.append(-1)
-            for locNum in range(0,len(answerLocs)-1):
-                answer += sentenceEnts[answerLocs[locNum]][0]
+        if (answer == ""): answer = sentence # get original sentence
+        return(answer)
+
+    def answerWhen(self, question, sentence):
+        answer = ""
+        answerLocs = []
+        words = self.clean(sentence).split()
+        inTimex = 0 # a tracker for if we are in a timex tagged phrase
+        for wordNum in range(0,len(words)):
+            if (words[wordNum] == "/TIMEX2"):
+                inTimex = 0
+            if (inTimex == 1):
+                answer += words[wordNum]
                 answer += " "
-                if (answerLocs[locNum+1] - answerLocs[locNum] > 1):
-                    answer += "and"
-                    answer += " "
-            if (answer == ""): answer = sentence # get original sentence
-            return(answer)
-        # time questions
-        if (wh == "when"):
-            words = cSentence.split()
-            answer = ""
-            inTimex = 0 # a tracker for if we are in a timex tagged phrase
-            for wordNum in range(0,len(words)):
-                if (words[wordNum] == "/TIMEX2"):
-                    inTimex = 0
-                if (inTimex == 1):
-                    answer += words[wordNum]
-                    answer += " "
-                if (words[wordNum] == "TIMEX2"):
-                    inTimex = 1
-            year = re.compile("((?<=\s)\d{4}|^\d{4})")
-            # make years sound more natural
-            if (year.findall(answer)): answer = "In " + answer
-            return(answer)
-        # what question
-        if (wh == "what" or wh == "which"):
-            return(sentence) # return the whole best sentence
+            if (words[wordNum] == "TIMEX2"):
+                inTimex = 1
+        year = re.compile("((?<=\s)\d{4}|^\d{4})")
+        if (year.findall(answer)): answer = "In " + answer + "."
+        return(answer)
 
-    def run(self):
-        for i in range(0, len(self.questions)):
-            #print("Question "+str(i)+": "+self.questions[i])
-            self.answerQuestion(self.questions[i], self.potentialAnswers[i])
+    def answerWhat(self, question, sentence):
+        return(sentence)
 
+    def answerWhich(self, question, sentence):
+        return(sentence)
 
-if __name__ == '__main__':
-    (Q, PA) = Preprocess(document=sys.argv[1], questionDoc=sys.argv[2]).run()
-    Answer(questions = Q, potentialAnswers = PA).run()
+Execute(document=sys.argv[1], questionDoc=sys.argv[2])

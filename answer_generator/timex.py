@@ -9,13 +9,6 @@ import string
 import os
 import sys
 
-# Requires eGenix.com mx Base Distribution
-# http://www.egenix.com/products/python/mxBase/
-try:
-    from mx.DateTime import *
-except ImportError:
-    pass
-
 # Predefined strings.
 numbers = "(^a(?=\s)|one|two|three|four|five|six|seven|eight|nine|ten| \
           eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen| \
