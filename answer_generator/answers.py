@@ -242,7 +242,6 @@ class Answer(object):
                 if (inTimex == 1):
                     answer += words[wordNum]
                     answer += " "
-                    #print("adding time!!!!!!!!"+words[wordNum])
                 if (words[wordNum] == "TIMEX2"):
                     inTimex = 1
             year = re.compile("((?<=\s)\d{4}|^\d{4})")

@@ -14,7 +14,7 @@ import sys
 try:
     from mx.DateTime import *
 except ImportError:
-    print("")
+    pass
 
 # Predefined strings.
 numbers = "(^a(?=\s)|one|two|three|four|five|six|seven|eight|nine|ten| \
