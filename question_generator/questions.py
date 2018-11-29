@@ -48,6 +48,10 @@ class Sentences:
         pos_tags = self.pos
         sentence_list = self.tokenized
 
+        verbs = {"VBD", "VBZ"}
+        nouns = {"NN", "NNP", "PRP"}
+        preps = {"at", "in"}
+
         subjectFirst = False
         locationFirst = False
         subjectFirstIndex = 0
@@ -59,20 +63,20 @@ class Sentences:
             for w in range(len(sentence)):
                 word = sentence[w]
                 if subjectFirst:
-                    if (pos_tags[w][1] in ["VBD", "VBZ"]):
+                    if (pos_tags[w][1] in verbs):
                         word_location["verb"] = (word, w)
-                    if(ner_tags[s][w][1] == "LOCATION" and sentence[w-1] in ["at", "in"]):
+                    if(ner_tags[s][w][1] == "LOCATION" and sentence[w-1] in preps):
                         subjectFirstIndex = w - 1
                         break
                 if locationFirst:
-                    if (pos_tags[s][w][1] in ["VBD", "VBZ"]):
+                    if (pos_tags[s][w][1] in verbs):
                             word_location["verb"] = (word, w)
                             locationFirstIndex = w
                             break
                 if (not (subjectFirst or locationFirst)):
                     if(ner_tags[s][w][1] == "LOCATION"):
                             locationFirst = True
-                    elif(pos_tags[s][w][1] in ["NN", "NNP", "PRP"]):
+                    elif(pos_tags[s][w][1] in nouns):
                             subjectfirst = True
                             word_location["subject"] = (word, w)
 
@@ -80,24 +84,24 @@ class Sentences:
             return []
         elif subjectFirst:
             verb_location = word_location["verb"][1]
-            bigchunk1 = "".join(str(e) for e in sentence [verb_location+1:subjectFirstIndex])
-            bigchunk1 = bigchunk1.replace(",", " ")
+            verb_phrase = "".join(str(e) for e in sentence [verb_location+1:subjectFirstIndex])
+            verb_phrase = verb_phrase.replace(",", " ")
 
             subject_location = word_location["sub"][1]
-            bigchunk0 = "".join(str(e) for e in sentence[w0-1:w1])
-            bigchunk0 = bigchunk0.replace(",", " ")
+            subject = "".join(str(e) for e in sentence[w0-1:w1])
+            subject = subject.replace(",", " ")
             if(word_location["verb"][0] in ["is", "was"]):
-                return ["Where " + word_location["verb"][0] + " " + bigchunk0 + " " + bigchunk1 + "?"]
+                return ["Where " + word_location["verb"][0] + " " + subject + " " + verb_phrase + "?"]
             elif(ner_tags[word_location["verb"][1]][1] == "VBD"):
-                return ["Where did " + word_location["subject"][0] + en.verb.present(word_location["verb"][0]) + " " + bigchunk1 + "?"]
+                return ["Where did " + word_location["subject"][0] + en.verb.present(word_location["verb"][0]) + " " + verb_phrase + "?"]
             else:
-                return ["Where does " + word_location["subject"][0] +  en.verb.present(word_location["verb"][0])+ " " + bigchunk1 + "?"]
+                return ["Where does " + word_location["subject"][0] +  en.verb.present(word_location["verb"][0])+ " " + verb_phrase + "?"]
         elif locationFirst:
-            bigchunk = "".join(str(e) + " " for e in
+            location = "".join(str(e) + " " for e in
                             sentence[locationFirstIndex:])
-            bigchunk = bigchunk.replace(".", "")
-            bigchunk = bigchunk.replace("!", "")
-            return ["Where " + bigchunk + "?"]
+            location = location.replace(".", "")
+            location = location.replace("!", "")
+            return ["Where " + location + "?"]
         else:
             return []
 
