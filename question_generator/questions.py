@@ -1,13 +1,21 @@
+#!/usr/bin/env python -W ignore::DeprecationWarning
+
+#Mute depreciation warning from scikit-learn
+def warn(*args, **kwargs):
+    pass
+import warnings
+warnings.warn = warn
+
 import nltk
 import sys
 import copy
 from nltk.tag.stanford import StanfordNERTagger, StanfordPOSTagger
 
-stanford_ner_jar = '/Users/sasikalamani/Desktop/coreNLP/stanford-ner-2018-10-16/stanford-ner.jar'
-stanford_ner_model = '/Users/sasikalamani/Desktop/coreNLP/stanford-ner-2018-10-16/classifiers/english.all.3class.distsim.crf.ser.gz'
-stanford_when_model = '/Users/sasikalamani/Desktop/coreNLP/stanford-ner-2018-10-16/classifiers/english.muc.7class.distsim.crf.ser.gz'
-stanford_pos_jar = '/Users/sasikalamani/Desktop/coreNLP/stanford-postagger-2018-10-16/stanford-postagger.jar'
-stanford_pos_model = '/Users/sasikalamani/Desktop/coreNLP/stanford-postagger-2018-10-16/models/english-bidirectional-distsim.tagger'
+stanford_ner_jar = '/home/coreNLP/stanford-ner-2018-10-16/stanford-ner.jar'
+stanford_ner_model = '/home/coreNLP/stanford-ner-2018-10-16/classifiers/english.all.3class.distsim.crf.ser.gz'
+stanford_pos_jar = '/home/coreNLP/stanford-postagger-full-2018-10-16/stanford-postagger.jar'
+stanford_pos_model = '/home/coreNLP/stanford-postagger-full-2018-10-16/models/english-bidirectional-distsim.tagger'
+stanford_when_model = '/home/coreNLP/stanford-ner-2018-10-16/classifiers/english.muc.7class.distsim.crf.ser.gz'
 
 ner_tagger = StanfordNERTagger(stanford_ner_model, stanford_ner_jar, encoding="utf8")
 pos_tagger = StanfordPOSTagger(stanford_pos_model, stanford_pos_jar, encoding="utf8")
@@ -73,7 +81,6 @@ class Questions:
     def proN(self, ner_tags):
         pn = dict()
         for (w, t) in ner_tags:
-            # words are represented as (word, tag)
             if t == "PERSON":
                 if(w not in pn):
                     pn[w] = 1
